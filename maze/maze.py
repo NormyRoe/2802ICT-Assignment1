@@ -31,6 +31,7 @@ class StackFrontier():
             return node
 
 
+
 class QueueFrontier(StackFrontier):
 
     def remove(self):
@@ -121,13 +122,18 @@ class Maze():
     def solve(self):
         """Finds a solution to maze, if one exists."""
 
-        # Keep track of number of states explored
+        # Keep track of number of states explored - set to zero
         self.num_explored = 0
+
+        # Ensure that the solution variables are empty
+        self.solution = None
+        self.solution_moves = []
+        self.path_length = 0
+        self.path_cost = 0
 
         # Initialize frontier to just the starting position
         start = Node(state=self.start, parent=None, action=None)
-        frontier = StackFrontier()
-        frontier.add(start)
+        self.frontier.add(start)
 
         # Initialize an empty explored set
         self.explored = set()
@@ -136,11 +142,12 @@ class Maze():
         while True:
 
             # If nothing left in frontier, then no path
-            if frontier.empty():
-                raise Exception("no solution")
+            if self.frontier.empty():
+                self.solution = None
+                return False
 
             # Choose a node from the frontier
-            node = frontier.remove()
+            node = self.frontier.remove()
             self.num_explored += 1
 
             # If node is the goal, then we have a solution
@@ -179,9 +186,103 @@ class Maze():
 
             # Add neighbors to frontier
             for action, state in self.neighbors(node.state):
-                if not frontier.contains_state(state) and state not in self.explored:
+                if not self.frontier.contains_state(state) and state not in self.explored:
                     child = Node(state=state, parent=node, action=action)
-                    frontier.add(child)
+                    self.frontier.add(child)
+
+    def solve_maze(self):
+        """Finds a solution to maze, if one exists."""
+        """Uses different algorithms"""
+
+        print("Solving...")
+
+        """Using BFS algorithm"""         
+        # Set the frontier variable   
+        self.frontier = QueueFrontier()
+
+        print("Solving with BFS algorithm")
+
+        # Start a timer
+        start_time = time.perf_counter()
+
+        # Start memory allocation tracing
+        tracemalloc.start()
+
+        # Perform the search
+        self.result = self.solve()
+
+        # End the timer
+        end_time = time.perf_counter()
+
+        # Get the current and peak memory allocation
+        self.memory_current, self.memory_peak = tracemalloc.get_traced_memory()
+
+        # Stop memory allocation tracing
+        tracemalloc.stop()
+
+        # Calculate the length of time it took in milliseconds
+        self.total_time = (end_time - start_time) * 1000
+
+        # Print the results of the algorithm's search
+        self.print_info("BFS")
+
+        """Using DFS algorithm"""
+        # Set the frontier variable
+        self.frontier = StackFrontier()
+
+        print("Solving with DFS algorithm")
+
+        # Start a timer
+        start_time = time.perf_counter()
+        
+        # Start memory allocation tracing
+        tracemalloc.start()
+
+        # Perform the search
+        self.result = self.solve()
+
+        # End the timer
+        end_time = time.perf_counter()
+        
+        # Get the current and peak memory allocation
+        self.memory_current, self.memory_peak = tracemalloc.get_traced_memory()
+        
+        # Stop memory allocation tracing
+        tracemalloc.stop()
+        
+        # Calculate the length of time it took in milliseconds
+        self.total_time = (end_time - start_time) * 1000
+        
+        # Print the results of the algorithm's search
+        self.print_info("DFS")
+
+
+    def print_info(self, algorithm):
+
+        # Check if the result is false
+        if not self.result:
+            print(f"No solution found using the {algorithm} algorithm")
+
+        # Print the algorithm's time
+        print(f"Time {algorithm} algorithm took to solve the maze: {self.total_time:.4f} ms ")
+
+        # Print the algorithm's memory usage
+        print(f"{algorithm} algorithm had a peak memory usage of: {self.memory_peak} bytes")
+
+        print("States Explored:", self.num_explored)
+
+        # Print the length of the solution path
+        print("Solution Path Length:", self.path_length)
+
+        # Print the cost of the solution path
+        print("Solution Path Cost:", self.path_cost)
+
+        # Print the solution path
+        print("Solution Moves: ", "-".join(self.solution_moves))
+
+        print(f"Solution using {algorithm}:")
+        self.print()
+        self.output_image(f"{algorithm}_maze.png", show_explored=True)
 
 
 
@@ -242,45 +343,6 @@ if len(sys.argv) != 2:
 m = Maze(sys.argv[1])
 print("Maze:")
 m.print()
-print("Solving...")
 
-# Start a timer
-start_time = time.perf_counter()
+m.solve_maze()
 
-# Start memory allocation tracing
-tracemalloc.start()
-
-m.solve()
-
-# End the timer
-end_time = time.perf_counter()
-
-# Get the current and peak memory allocation
-memory_current, memory_peak = tracemalloc.get_traced_memory()
-
-# Stop memory allocation tracing
-tracemalloc.stop()
-
-# Calculate the length of time it took in milliseconds
-total_time = (end_time - start_time) * 1000
-
-# Print the algorithm's time
-print(f"Time algorithm took to solve the maze: {total_time:.4f} ms ")
-
-# Print the algorithm's memory usage
-print(f"Algorithm had a peak memory usage of: {memory_peak} bytes")
-
-print("States Explored:", m.num_explored)
-
-# Print the length of the solution path
-print("Solution Path Length:", m.path_length)
-
-# Print the cost of the solution path
-print("Solution Path Cost:", m.path_cost)
-
-# Print the solution path
-print("Solution Moves: ", "-".join(m.solution_moves))
-
-print("Solution:")
-m.print()
-m.output_image("maze.png", show_explored=True)
