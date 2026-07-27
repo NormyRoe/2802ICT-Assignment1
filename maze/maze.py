@@ -1,4 +1,6 @@
 import sys
+import time
+import tracemalloc
 
 class Node():
     def __init__(self, state, parent, action):
@@ -152,6 +154,24 @@ class Maze():
                 actions.reverse()
                 cells.reverse()
                 self.solution = (actions, cells)
+
+                # Dictionary for converting actions to L-U-R-D format
+                action_map = {
+                    "up": "U",
+                    "down": "D",
+                    "left": "L",
+                    "right": "R"
+                }
+                
+                # Store a L-U-R-D formatted list for the solution
+                self.solution_moves = [action_map[a] for a in actions]
+
+                # Calculate path length
+                self.path_length = len(cells)
+
+                #Calculate path cost
+                self.path_cost = len(cells)
+
                 return
 
             # Mark node as explored
@@ -162,6 +182,7 @@ class Maze():
                 if not frontier.contains_state(state) and state not in self.explored:
                     child = Node(state=state, parent=node, action=action)
                     frontier.add(child)
+
 
 
     def output_image(self, filename, show_solution=True, show_explored=False):
@@ -222,8 +243,44 @@ m = Maze(sys.argv[1])
 print("Maze:")
 m.print()
 print("Solving...")
+
+# Start a timer
+start_time = time.perf_counter()
+
+# Start memory allocation tracing
+tracemalloc.start()
+
 m.solve()
+
+# End the timer
+end_time = time.perf_counter()
+
+# Get the current and peak memory allocation
+memory_current, memory_peak = tracemalloc.get_traced_memory()
+
+# Stop memory allocation tracing
+tracemalloc.stop()
+
+# Calculate the length of time it took in milliseconds
+total_time = (end_time - start_time) * 1000
+
+# Print the algorithm's time
+print(f"Time algorithm took to solve the maze: {total_time:.4f} ms ")
+
+# Print the algorithm's memory usage
+print(f"Algorithm had a peak memory usage of: {memory_peak} bytes")
+
 print("States Explored:", m.num_explored)
+
+# Print the length of the solution path
+print("Solution Path Length:", m.path_length)
+
+# Print the cost of the solution path
+print("Solution Path Cost:", m.path_cost)
+
+# Print the solution path
+print("Solution Moves: ", "-".join(m.solution_moves))
+
 print("Solution:")
 m.print()
 m.output_image("maze.png", show_explored=True)
