@@ -208,17 +208,20 @@ class Maze():
                     child = Node(state=state, parent=node, action=action, cost_actual=child_cost_actual)
                     self.frontier.add(child)
 
-    def solve_maze(self):
+    def solve_maze(self, algorithm):
         """Finds a solution to maze, if one exists."""
         """Uses different algorithms"""
 
         print("Solving...")
 
-        """Using BFS algorithm"""         
+        """Select the correct frontier class to use"""         
         # Set the frontier variable   
-        self.frontier = QueueFrontier()
+        if algorithm == "BFS":
+            self.frontier = QueueFrontier()
+        elif algorithm == "DFS":
+            self.frontier = StackFrontier()
 
-        print("Solving with BFS algorithm")
+        print(f"Solving with {algorithm} algorithm")
 
         # Start a timer
         start_time = time.perf_counter()
@@ -242,37 +245,7 @@ class Maze():
         self.total_time = (end_time - start_time) * 1000
 
         # Print the results of the algorithm's search
-        self.print_info("BFS")
-
-        """Using DFS algorithm"""
-        # Set the frontier variable
-        self.frontier = StackFrontier()
-
-        print("Solving with DFS algorithm")
-
-        # Start a timer
-        start_time = time.perf_counter()
-        
-        # Start memory allocation tracing
-        tracemalloc.start()
-
-        # Perform the search
-        self.result = self.solve()
-
-        # End the timer
-        end_time = time.perf_counter()
-        
-        # Get the current and peak memory allocation
-        self.memory_current, self.memory_peak = tracemalloc.get_traced_memory()
-        
-        # Stop memory allocation tracing
-        tracemalloc.stop()
-        
-        # Calculate the length of time it took in milliseconds
-        self.total_time = (end_time - start_time) * 1000
-        
-        # Print the results of the algorithm's search
-        self.print_info("DFS")
+        self.print_info(algorithm)        
 
 
     def print_info(self, algorithm):
@@ -362,5 +335,8 @@ m = Maze(sys.argv[1])
 print("Maze:")
 m.print()
 
-m.solve_maze()
+"""Using BFS algorithm"""
+m.solve_maze("BFS")
 
+"""Using DFS algorithm"""
+m.solve_maze("DFS")
