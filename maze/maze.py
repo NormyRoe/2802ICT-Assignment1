@@ -3,10 +3,15 @@ import time
 import tracemalloc
 
 class Node():
-    def __init__(self, state, parent, action):
+    def __init__(self, state, parent, action, cost_actual = 0, cost_estimated = 0):        
         self.state = state
         self.parent = parent
         self.action = action
+
+        # Cost Variables needed for algorithms
+        self.cost_actual = cost_actual
+        self.cost_estimated = cost_estimated
+        self.cost_total = cost_actual + cost_estimated
 
 
 class StackFrontier():
@@ -128,6 +133,9 @@ class Maze():
         # Keep track of number of states explored - set to zero
         self.num_explored = 0
 
+        # Set a Step Cost, since all steps cost the same
+        self.step_cost = 1
+
         # Ensure that the solution variables are empty
         self.solution = None
         self.solution_moves = []
@@ -155,6 +163,13 @@ class Maze():
 
             # If node is the goal, then we have a solution
             if node.state == self.goal:
+
+                # Set the node as the goal node
+                goal_node = node
+
+                # Set the actual cost of the goal node as the path cost
+                self.path_cost = goal_node.cost_actual
+
                 actions = []
                 cells = []
                 while node.parent is not None:
@@ -177,12 +192,9 @@ class Maze():
                 self.solution_moves = [action_map[a] for a in actions]
 
                 # Calculate path length
-                self.path_length = len(cells)
+                self.path_length = len(cells)                
 
-                #Calculate path cost
-                self.path_cost = len(cells)
-
-                return
+                return True
 
             # Mark node as explored
             self.explored.add(node.state)
@@ -190,7 +202,10 @@ class Maze():
             # Add neighbors to frontier
             for action, state in self.neighbors(node.state):
                 if not self.frontier.contains_state(state) and state not in self.explored:
-                    child = Node(state=state, parent=node, action=action)
+                    # Add the step cost to the current actual cost
+                    child_cost_actual = node.cost_actual + self.step_cost
+                    # Create the child with the new actual cost of reaching it
+                    child = Node(state=state, parent=node, action=action, cost_actual=child_cost_actual)
                     self.frontier.add(child)
 
     def solve_maze(self):
