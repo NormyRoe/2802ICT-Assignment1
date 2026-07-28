@@ -3,7 +3,7 @@ import time
 import tracemalloc
 
 class Node():
-    def __init__(self, state, parent, action, cost_actual = 0, cost_estimated = 0):        
+    def __init__(self, state, parent, action, cost_actual = 0, cost_estimated = 0, depth = 0):        
         self.state = state
         self.parent = parent
         self.action = action
@@ -12,6 +12,9 @@ class Node():
         self.cost_actual = cost_actual
         self.cost_estimated = cost_estimated
         self.cost_total = cost_actual + cost_estimated
+
+        # Depth Variable needed for Iterative algorithms
+        self.depth = depth
 
 
 class StackFrontier():
@@ -127,7 +130,7 @@ class Maze():
         return result
 
 
-    def solve(self):
+    def solve(self, depth_limit = None):
         """Finds a solution to maze, if one exists."""
 
         # Keep track of number of states explored - set to zero
@@ -204,9 +207,11 @@ class Maze():
                 if not self.frontier.contains_state(state) and state not in self.explored:
                     # Add the step cost to the current actual cost
                     child_cost_actual = node.cost_actual + self.step_cost
-                    # Create the child with the new actual cost of reaching it
-                    child = Node(state=state, parent=node, action=action, cost_actual=child_cost_actual)
-                    self.frontier.add(child)
+                    # Create the child with the new actual cost of reaching it and the depth of the child
+                    child = Node(state=state, parent=node, action=action, cost_actual=child_cost_actual, depth=node.depth + 1)
+                    # Check if the limit has been reached
+                    if depth_limit is None or child.depth <= depth_limit:
+                        self.frontier.add(child)
 
     def solve_maze(self, algorithm):
         """Finds a solution to maze, if one exists."""
@@ -215,9 +220,10 @@ class Maze():
         print("Solving...")
 
         """Select the correct frontier class to use"""         
-        # Set the frontier variable   
+        # Set the frontier variable for non-iterative algorithms
         if algorithm == "BFS":
             self.frontier = QueueFrontier()
+
         elif algorithm == "DFS":
             self.frontier = StackFrontier()
 
@@ -229,8 +235,34 @@ class Maze():
         # Start memory allocation tracing
         tracemalloc.start()
 
-        # Perform the search
-        self.result = self.solve()
+        # Check if the algorithm is an iterative one
+        if algorithm == "IDS":
+
+            # Initialise limit as zero
+            limit = 0
+
+            # While loop to perform the iterative search
+            while True:
+
+                # Set the frontier variable
+                self.frontier = StackFrontier()
+
+                # Perform the search with the current depth limit
+                self.result = self.solve(depth_limit=limit)
+
+                # Check if result is true
+                if self.result:
+
+                    # Break out of while loop
+                    break
+
+                # Increase limit by 1
+                limit += 1
+
+        # Otherwise just perform the search
+        else:
+            # Perform the search
+            self.result = self.solve()
 
         # End the timer
         end_time = time.perf_counter()
@@ -340,3 +372,6 @@ m.solve_maze("BFS")
 
 """Using DFS algorithm"""
 m.solve_maze("DFS")
+
+"""Using IDS algorithm"""
+m.solve_maze("IDS")
