@@ -83,6 +83,9 @@ class Maze():
 
         self.solution = None
 
+        # Store the filename without the file type
+        self.filename = filename.removesuffix(".txt")
+
 
     def print(self):
         solution = self.solution[1] if self.solution is not None else None
@@ -282,7 +285,7 @@ class Maze():
 
         print(f"Solution using {algorithm}:")
         self.print()
-        self.output_image(f"{algorithm}_maze.png", show_explored=True)
+        self.output_image(f"{algorithm}_{self.filename}.png", show_explored=True)
 
 
 
