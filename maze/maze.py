@@ -50,6 +50,16 @@ class QueueFrontier(StackFrontier):
             self.frontier = self.frontier[1:]
             return node
 
+
+class PriorityQueueFrontier(QueueFrontier):
+
+    def add(self, node):
+        self.frontier.append(node)
+
+        # Sort the queue by cost_total
+        self.frontier.sort(key=lambda n: n.cost_total)
+
+
 class Maze():
 
     def __init__(self, filename):
