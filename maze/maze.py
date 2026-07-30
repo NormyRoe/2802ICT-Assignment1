@@ -449,8 +449,13 @@ class Maze():
             # Initialise total explored
             self.total_explored = 0
 
+            # Determine the maximum possible path length
+            max_depth = self.height * self.width
+
             # While loop to perform the iterative search
-            while True:
+            # Only stop if the limit becomes higher than the max_depth
+            # This prevents infinite loops.
+            while limit <= max_depth:
 
                 # Set the frontier variable
                 self.frontier = StackFrontier()
