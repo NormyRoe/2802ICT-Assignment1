@@ -584,7 +584,7 @@ class Maze():
         print("States Explored:", self.num_explored)
 
         # Check if the algorithm is iterative
-        if algorithm == "IDS":
+        if algorithm == "IDS" or algorithm == "IDA*":
 
             # Print total States Explored
             print("Total States Explored:", self.total_explored)
@@ -688,3 +688,6 @@ m.solve_maze("IDS")
 
 """Using A* algorithm"""
 m.solve_maze("A*")
+
+"""Using IDA* algorithm"""
+m.solve_maze("IDA*")
