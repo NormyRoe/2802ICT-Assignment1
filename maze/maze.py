@@ -240,10 +240,11 @@ class Maze():
     #
     # Input:    int     (optional)     What the depth limit is 
     #           string  (optional)     Which algorithm is being used to solve the maze
+    #           int     (optional)     What the f limit is
     # Output:   bool    Whether a solution was found
     ###############################################################################################
 
-    def solve(self, depth_limit = None, algorithm = None):
+    def solve(self, depth_limit = None, algorithm = None, f_limit = None):
         """Finds a solution to maze, if one exists."""
 
         # Keep track of number of states explored - set to zero
@@ -258,9 +259,17 @@ class Maze():
         self.path_length = 0
         self.path_cost = 0
 
-        # Initialize frontier to just the starting position
-        start = Node(state=self.start, parent=None, action=None)
-        self.frontier.add(start)
+        # Check that the algorithm is not "IDA*"
+        if not algorithm == "IDA*":
+            # Initialize frontier to just the starting position
+            start = Node(state=self.start, parent=None, action=None)
+            self.frontier.add(start)
+
+        # Check that the algorithm is "IDA*"
+        if algorithm == "IDA*":
+
+            # Add the starting node to the frontier
+            self.frontier.add(self.f_start)
 
         # Initialize an empty explored dictionary
         # This use to be 'self.explored = set()'
@@ -331,11 +340,37 @@ class Maze():
                 child = Node(state=state, parent=node, action=action, cost_actual=child_cost_actual, 
                                  cost_estimated=child_cost_estimate, depth=node.depth + 1)
                 
+                
                 if not self.frontier.contains_state(state) and state not in self.explored:
-                    
-                    # Check if the limit has been reached
-                    if depth_limit is None or child.depth <= depth_limit:
-                        self.frontier.add(child)
+
+                    # Check if the algorithm is "IDA*"
+                    if algorithm == "IDA*":
+
+                        # Check if the f_limit has been reached
+                        if child.cost_total > f_limit:
+
+                            # Don't add the child to the frontier
+                            # Check if the child's total_cost is lower than the next_f_limit
+                            # Need to track the smallest f that exceeded the f_limit
+                            if child.cost_total < self.next_f_limit:
+
+                                # Update next_f_limit
+                                self.next_f_limit = child.cost_total
+
+                                # Continue the function
+                                continue
+                        else :
+
+                            # Add the child to the frontier
+                            self.frontier.add(child)
+
+                    else :
+
+                        # Check if the limit has been reached
+                        if depth_limit is None or child.depth <= depth_limit:
+
+                            # Add the child to the frontier
+                            self.frontier.add(child)
 
                 # Else if the algorithm is 'A*' and the state is already in the frontier
                 elif algorithm == "A*" and self.frontier.contains_state(state):
@@ -432,6 +467,44 @@ class Maze():
                 # Increase limit by 1
                 limit += 1
 
+        elif algorithm == "IDA*":
+
+            # Creat the starting node object
+            self.f_start = Node(state=self.start, parent=None, action=None, cost_estimated=self.heuristic_value(self.start))
+
+            # Initialise the f-limit value
+            f_limit = self.f_start.cost_total
+
+            # Initialise total explored
+            self.total_explored = 0
+
+            # While loop to perform the iterative search
+            while True:
+
+                # Set the frontier variable
+                self.frontier = StackFrontier()
+
+                # Set the next f limit to infinity
+                self.next_f_limit = float("inf")
+
+                # Perform the search with the current f limit
+                self.result = self.solve(algorithm="IDA*", f_limit=f_limit)
+
+                # Check if result is true
+                if self.result:
+
+                    # Break out of while loop
+                    break
+
+                # Check if next_f_limit is infinity
+                if self.next_f_limit == float("inf"):
+
+                    # Break out of while loop as there is no better f_limit
+                    break
+
+                # Change f_limit to be the next_f_limit value
+                f_limit = self.next_f_limit
+
         # Otherwise just perform the search
         else:
 
@@ -481,6 +554,7 @@ class Maze():
 
         # Return the total steps from the cell to the goal
         return count_row + count_col
+
 
 
     ###############################################################################################
