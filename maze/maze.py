@@ -2,6 +2,14 @@ import sys
 import time
 import tracemalloc
 
+###############################################################################################
+# Class: Node
+# Description:
+# This is the class used for each cell in the Maze.
+#
+#
+###############################################################################################
+    
 class Node():
     def __init__(self, state, parent, action, cost_actual = 0, cost_estimated = 0, depth = 0):        
         self.state = state
@@ -16,6 +24,14 @@ class Node():
         # Depth Variable needed for Iterative algorithms
         self.depth = depth
 
+
+###############################################################################################
+# Class: StackFrontier
+# Description:
+# Creates a Stack list object for the algorithms to use as their frontier object.
+#
+#
+###############################################################################################
 
 class StackFrontier():
     def __init__(self):
@@ -39,6 +55,13 @@ class StackFrontier():
             return node
 
 
+###############################################################################################
+# Class: QueueFrontier
+# Description:
+# Inherits from the StackFrontier class
+# Creates a Queue list object for the algorithms to use as their frontier object.
+#
+###############################################################################################
 
 class QueueFrontier(StackFrontier):
 
@@ -51,6 +74,14 @@ class QueueFrontier(StackFrontier):
             return node
 
 
+###############################################################################################
+# Class: PriorityQueueFrontier
+# Description:
+# Inherits from the QueueFrontier class
+# Creates a Priority Queue list object for the algorithms to use as their frontier object.
+#
+###############################################################################################
+
 class PriorityQueueFrontier(QueueFrontier):
 
     def add(self, node):
@@ -59,6 +90,65 @@ class PriorityQueueFrontier(QueueFrontier):
         # Sort the queue by cost_total
         self.frontier.sort(key=lambda n: n.cost_total)
 
+
+    ###############################################################################################
+    # Function: get_node
+    # Description:
+    # Based on the provided state, returns the matching node from the frontier.
+    #
+    # Input:    state       The state to check existing node objects against
+    # Output:   Node        The node matching the supplied state
+    ###############################################################################################
+    def get_node(self, state):
+
+        # for loop to go through the nodes in the queue
+        for node in self.frontier:
+
+            # If the new node/state is already in the frontier
+            if node.state == state:
+
+                # return the node
+                return node
+
+        # Return None
+        return None
+
+
+    ###############################################################################################
+    # Function: solve_maze
+    # Description:
+    # Based on the provided algorithm:
+    #       * determines which class object type to set as the frontier
+    #       * determines whether an iterative approach is required and what that approach will be
+    # Uses a performance timer.
+    # Uses a memory allocation tracer.
+    # Calls the solve() function.
+    # Calls the print_info() function.
+    #
+    # Input:    string     Which algorithm is being used to solve the maze
+    # Output:   N/A
+    ###############################################################################################
+    def replace(self, old_node, new_node):
+
+        # Get the index value for the old node
+        index = self.frontier.index(old_node)
+
+        # Replace the old node with the new node
+        self.frontier[index] = new_node
+
+        # Sort the queue by cost_total
+        self.frontier.sort(key=lambda n: n.cost_total)
+
+
+###############################################################################################
+# Class: Maze
+# Description:
+# Reads in a txt file and creates the Maze
+# Determines which class to use for which algorithm
+# Performs the algorithm searching to solve the maze
+# Outputs the results of the algorithm searching
+#
+###############################################################################################
 
 class Maze():
 
@@ -140,7 +230,20 @@ class Maze():
         return result
 
 
-    def solve(self, depth_limit = None):
+    ###############################################################################################
+    # Function: solve
+    # Description:
+    # Searches for a solution to the maze using the already set frontier
+    # Based on a provided depth limit and/or algorithm:
+    #       * performs the search only to the specified depth
+    #       * performs additional steps for the specified algorithm
+    #
+    # Input:    int     (optional)     What the depth limit is 
+    #           string  (optional)     Which algorithm is being used to solve the maze
+    # Output:   bool    Whether a solution was found
+    ###############################################################################################
+
+    def solve(self, depth_limit = None, algorithm = None):
         """Finds a solution to maze, if one exists."""
 
         # Keep track of number of states explored - set to zero
@@ -159,8 +262,10 @@ class Maze():
         start = Node(state=self.start, parent=None, action=None)
         self.frontier.add(start)
 
-        # Initialize an empty explored set
-        self.explored = set()
+        # Initialize an empty explored dictionary
+        # This use to be 'self.explored = set()'
+        # But it was changed to accommodate the A* algorithms.
+        self.explored = {}
 
         # Keep looping until solution found
         while True:
@@ -173,6 +278,7 @@ class Maze():
             # Choose a node from the frontier
             node = self.frontier.remove()
             self.num_explored += 1
+            self.total_explored += 1
 
             # If node is the goal, then we have a solution
             if node.state == self.goal:
@@ -210,22 +316,73 @@ class Maze():
                 return True
 
             # Mark node as explored
-            self.explored.add(node.state)
+            self.explored[node.state] = node
 
             # Add neighbors to frontier
             for action, state in self.neighbors(node.state):
+
+                # Add the step cost to the current actual cost
+                child_cost_actual = node.cost_actual + self.step_cost
+
+                # Calculate the heuristic value for this node
+                child_cost_estimate = self.heuristic_value(state)
+
+                # Create the child with the new actual cost of reaching it and the depth of the child
+                child = Node(state=state, parent=node, action=action, cost_actual=child_cost_actual, 
+                                 cost_estimated=child_cost_estimate, depth=node.depth + 1)
+                
                 if not self.frontier.contains_state(state) and state not in self.explored:
-                    # Add the step cost to the current actual cost
-                    child_cost_actual = node.cost_actual + self.step_cost
-                    # Create the child with the new actual cost of reaching it and the depth of the child
-                    child = Node(state=state, parent=node, action=action, cost_actual=child_cost_actual, depth=node.depth + 1)
+                    
                     # Check if the limit has been reached
                     if depth_limit is None or child.depth <= depth_limit:
                         self.frontier.add(child)
 
+                # Else if the algorithm is 'A*' and the state is already in the frontier
+                elif algorithm == "A*" and self.frontier.contains_state(state):
+
+                    # Retrieve the existing node
+                    existing_node = self.frontier.get_node(state)
+
+                    # Check if the new total cost is lower
+                    if child.cost_total < existing_node.cost_total:
+
+                        # Replace the existing node
+                        self.frontier.replace(existing_node, child)
+
+                # Else if the algorithm is 'A*' and the state is already in the explored set
+                elif algorithm == "A*" and state in self.explored:
+
+                    # Retrieve the existing node
+                    existing_node = self.explored[state]
+
+                    # Check if the new total cost is lower
+                    if child.cost_total < existing_node.cost_total:
+
+                        # Remove the node from the explored set
+                        del self.explored[state]
+
+                        # Add the new version of the node to frontier
+                        self.frontier.add(child)
+
+
+    ###############################################################################################
+    # Function: solve_maze
+    # Description:
+    # Based on the provided algorithm:
+    #       * determines which class object type to set as the frontier
+    #       * determines whether an iterative approach is required and what that approach will be
+    # Uses a performance timer.
+    # Uses a memory allocation tracer.
+    # Calls the solve() function.
+    # Calls the print_info() function.
+    #
+    # Input:    string     Which algorithm is being used to solve the maze
+    # Output:   N/A
+    ###############################################################################################
+
     def solve_maze(self, algorithm):
         """Finds a solution to maze, if one exists."""
-        """Uses different algorithms"""
+        """Sets variables and function calls based on the algorithm to be used"""
 
         print("Solving...")
 
@@ -236,6 +393,9 @@ class Maze():
 
         elif algorithm == "DFS":
             self.frontier = StackFrontier()
+
+        elif algorithm == "A*":
+            self.frontier = PriorityQueueFrontier()
 
         print(f"Solving with {algorithm} algorithm")
 
@@ -250,6 +410,9 @@ class Maze():
 
             # Initialise limit as zero
             limit = 0
+
+            # Initialise total explored
+            self.total_explored = 0
 
             # While loop to perform the iterative search
             while True:
@@ -271,8 +434,12 @@ class Maze():
 
         # Otherwise just perform the search
         else:
+
+            # Initialise total explored
+            self.total_explored = 0
+
             # Perform the search
-            self.result = self.solve()
+            self.result = self.solve(algorithm=algorithm)
 
         # End the timer
         end_time = time.perf_counter()
@@ -290,6 +457,44 @@ class Maze():
         self.print_info(algorithm)        
 
 
+    ###############################################################################################
+    # Function: heuristic_value
+    # Description:
+    # Calculates how many steps are required from the state's cell to reach the goal.
+    # This calcuation assumes that there are no walls blocking the path.
+    #
+    # Input:    state   The state for which the heuristic value needs to be calculated
+    # Output:   int     The number of steps to get from this state to the goal state
+    ###############################################################################################
+
+    def heuristic_value(self, state):
+
+        # Get the cell's row and column number from state
+        row, col = state
+
+        # Get the goal's row and column number from the goal variable
+        goal_row, goal_col = self.goal
+
+        # Get the absolute values for how many rows and columns to move through
+        count_row = abs(row - goal_row)
+        count_col = abs(col - goal_col)
+
+        # Return the total steps from the cell to the goal
+        return count_row + count_col
+
+
+    ###############################################################################################
+    # Function: print_info
+    # Description:
+    # Prints various information/stats regarding the search for the maze solution 
+    # for the supplied algorithm
+    # Calls the print() function
+    # Calls the output_image() function
+    #
+    # Input:    string     Which algorithm was used to solve the maze
+    # Output:   N/A
+    ###############################################################################################
+
     def print_info(self, algorithm):
 
         # Check if the result is false
@@ -297,25 +502,46 @@ class Maze():
             print(f"No solution found using the {algorithm} algorithm")
 
         # Print the algorithm's time
-        print(f"Time {algorithm} algorithm took to solve the maze: {self.total_time:.4f} ms ")
+        print(f"Time {algorithm} algorithm took: {self.total_time:.4f} ms ")
 
         # Print the algorithm's memory usage
         print(f"{algorithm} algorithm had a peak memory usage of: {self.memory_peak} bytes")
 
         print("States Explored:", self.num_explored)
 
-        # Print the length of the solution path
-        print("Solution Path Length:", self.path_length)
+        # Check if the algorithm is iterative
+        if algorithm == "IDS":
 
-        # Print the cost of the solution path
-        print("Solution Path Cost:", self.path_cost)
+            # Print total States Explored
+            print("Total States Explored:", self.total_explored)
 
-        # Print the solution path
-        print("Solution Moves: ", "-".join(self.solution_moves))
+        # Check if the result is true
+        if self.result:
 
-        print(f"Solution using {algorithm}:")
-        self.print()
-        self.output_image(f"{algorithm}_{self.filename}.png", show_explored=True)
+            # Print the length of the solution path
+            print("Solution Path Length:", self.path_length)
+
+            # Print the cost of the solution path
+            print("Solution Path Cost:", self.path_cost)
+
+            # Print the solution path
+            print("Solution Moves: ", "-".join(self.solution_moves))
+
+            print(f"Solution using {algorithm}:")
+            self.print()
+
+            # Check if the algorithm contains a '*'
+            if algorithm.__contains__("*"):
+
+                # Strip out the '*' from the algorithm's name
+                name = algorithm.strip("*")
+
+                # Output the image
+                self.output_image(f"{name}_{self.filename}.png", show_explored=True)
+
+            # Otherwise output the image
+            else:    
+                self.output_image(f"{algorithm}_{self.filename}.png", show_explored=True)
 
 
 
@@ -385,3 +611,6 @@ m.solve_maze("DFS")
 
 """Using IDS algorithm"""
 m.solve_maze("IDS")
+
+"""Using A* algorithm"""
+m.solve_maze("A*")
