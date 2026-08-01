@@ -115,17 +115,12 @@ class PriorityQueueFrontier(QueueFrontier):
 
 
     ###############################################################################################
-    # Function: solve_maze
+    # Function: replace
     # Description:
-    # Based on the provided algorithm:
-    #       * determines which class object type to set as the frontier
-    #       * determines whether an iterative approach is required and what that approach will be
-    # Uses a performance timer.
-    # Uses a memory allocation tracer.
-    # Calls the solve() function.
-    # Calls the print_info() function.
+    # Uses the index value of the old node object to replace object with the new node object.
     #
-    # Input:    string     Which algorithm is being used to solve the maze
+    # Input:    Node    The old node object to be replaced
+    #           Node    The new node object to be stored
     # Output:   N/A
     ###############################################################################################
     def replace(self, old_node, new_node):
