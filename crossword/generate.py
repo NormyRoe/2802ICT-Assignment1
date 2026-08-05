@@ -240,14 +240,69 @@ class CrosswordCreator():
         Return True if `assignment` is complete (i.e., assigns a value to each
         crossword variable); return False otherwise.
         """
-        raise NotImplementedError
+
+        # Check if assignment has the same number of variables as domain doees
+        if len(assignment.keys()) == len(self.domains.keys()):
+
+            # Return true to indicate that assignment is complete
+            return True
+
+        # else the numbers are not the same
+        else:
+
+            # Return false to indicate that assignment is not complete
+            return False
+
+        
 
     def consistent(self, assignment):
         """
         Return True if `assignment` is consistent (i.e., words fit in crossword
         puzzle without conflicting characters); return False otherwise.
         """
-        raise NotImplementedError
+
+        # Create a set from the assignment's values
+        words = set(assignment.values())
+
+        # Check if all words are distinct
+        if len(words) != len(assignment.values()):
+
+            # Return false as it is inconsistent
+            return False
+
+        # For loop through the assignment variables
+        for x_var in assignment.keys():
+
+            # Inner For loop through the assignment variables
+            for y_var in assignment.keys():
+
+                # If x_var does not equal y_var
+                if x_var != y_var:
+
+                    # Get the overlap result
+                    overlap = self.crossword.overlaps(x_var, y_var)
+        
+                    # Check if overlap exists
+                    if overlap is None:
+                    
+                        # Continue to the next variable
+                        continue
+                        
+                    # Get the overlap indexes
+                    x_index, y_index = overlap
+
+                    # Check that the letter at the overlap point is the same
+                    if assignment[x_var][x_index] != assignment[y_var][y_index]:
+
+                        # Return false as there is an inconsistency
+                        return False
+
+        # return true as it is consistent
+        return True
+
+
+
+
 
     def order_domain_values(self, var, assignment):
         """
