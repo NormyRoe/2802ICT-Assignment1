@@ -184,7 +184,56 @@ class CrosswordCreator():
         Return True if arc consistency is enforced and no domains are empty;
         return False if one or more domains end up empty.
         """
-        raise NotImplementedError
+
+        # If arcs equals None
+        if arcs is None:
+
+            # Create a temporary list for arcs
+            arcs_list = []
+
+            # For loop through the domains dictionary variable
+            for var in self.domains.keys():
+
+                # For loop through the variable's neighbours
+                for y in self.crossword.neighbours(var):
+
+                    # Add the pair to arcs_list
+                    arcs_list.append((var, y))
+
+        # Else arcs is not None
+        else:
+
+            # Create a tempory list using the provided arcs
+            arcs_list = arcs
+
+        # While loop to go through the temporary list and enforce arc consistency
+        # Runs until the list is empty
+        while arcs_list:
+
+            # Retrieve the first pair in the list
+            x, y = arcs_list.pop(0)
+
+            # If revise updates domains
+            if self.revise(x, y):
+
+                # Check if the domain for x is empty
+                if not self.domains[x]:
+
+                    # Return false as an error has been detected
+                    return False
+
+                # For loop through x's neighbours
+                for z in self.crossword.neighbours(x):
+
+                    # Check that z does not equal y
+                    if z != y:
+                
+                        # Add the pair in reverse order to arcs_list
+                        arcs_list.append((z, x))
+
+        # Return true as the list is empty
+        return True
+
 
     def assignment_complete(self, assignment):
         """
