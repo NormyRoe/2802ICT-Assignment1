@@ -146,7 +146,7 @@ class CrosswordCreator():
         False if no revision was made.
         """
         # Get the overlap result
-        overlap = self.crossword.overlaps(x, y)
+        overlap = self.crossword.overlaps[(x, y)]
 
         # Check if overlap exists
         if overlap is None:
@@ -217,8 +217,8 @@ class CrosswordCreator():
             # For loop through the domains dictionary variable
             for var in self.domains.keys():
 
-                # For loop through the variable's neighbours
-                for y in self.crossword.neighbours(var):
+                # For loop through the variable's neighbors
+                for y in self.crossword.neighbors(var):
 
                     # Add the pair to arcs_list
                     arcs_list.append((var, y))
@@ -245,8 +245,8 @@ class CrosswordCreator():
                     # Return false as an error has been detected
                     return False
 
-                # For loop through x's neighbours
-                for z in self.crossword.neighbours(x):
+                # For loop through x's neighbors
+                for z in self.crossword.neighbors(x):
 
                     # Check that z does not equal y
                     if z != y:
@@ -317,7 +317,7 @@ class CrosswordCreator():
                 if x_var != y_var:
 
                     # Get the overlap result
-                    overlap = self.crossword.overlaps(x_var, y_var)
+                    overlap = self.crossword.overlaps[(x_var, y_var)]
         
                     # Check if overlap exists
                     if overlap is None:
@@ -545,7 +545,7 @@ class CrosswordCreator():
             self.print(self.naive_search)
 
             # Create the solution output file
-            self.save(self.naive_search, "naive_search")
+            self.save(self.naive_search, "naive_search.png")
 
         # Print message saying which search is being done
         print("\n\nSolving with Heuristic Backtracking search:\n")
@@ -573,7 +573,10 @@ class CrosswordCreator():
             self.print(self.heuristic_search)
 
             # Create the solution output file
-            self.save(self.heuristic_search, "heuristic_search")
+            self.save(self.heuristic_search, "heuristic_search.png")
+
+            # Print a couple of empty lines
+            print("\n\n")
 
 
 def main():
