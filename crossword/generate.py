@@ -435,7 +435,7 @@ class CrosswordCreator():
             # return the variable
             return candidates_dh[0]
 
-        # Step 3 - Perform additional tie breaker
+        # Step 4 - Perform additional tie breaker
 
         # Arbitarily return the first entry in the DH candidate list
         return candidates_dh[0]
@@ -486,7 +486,7 @@ class CrosswordCreator():
         start_time = time.perf_counter()
         
         # Perform the naive backtrack search
-        self.heuristic_search = self.perform_backtrack(dict())
+        self.heuristic_search = self.perform_backtrack(dict(), heuristic=True)
         
         # End the timer
         end_time = time.perf_counter()
@@ -510,7 +510,7 @@ class CrosswordCreator():
     # Notes: Counts attempts and backtracks for benchmarking.
     # ============================================================
 
-    def perform_backtrack(self, assignment):
+    def perform_backtrack(self, assignment, heuristic = False):
         """
         Method to Perform the actual backtrack search
         """        
@@ -525,8 +525,17 @@ class CrosswordCreator():
 
         # Step 2 - Select an unassigned variable
 
-        # Set the next unassigned variable ready for use
-        var = self.next_unassigned_variable(assignment)
+        # Determine which function to use for determining the next variable
+        if heuristic is False:
+
+            # Set the next unassigned variable ready for use
+            var = self.next_unassigned_variable(assignment)
+
+        # else heuristic is true
+        else:
+
+            # Set the next unassigned variable ready for use
+            var = self.select_unassigned_variable(assignment)
 
         # Step 3 - Try each value in the domain for the selected variable
 
@@ -536,8 +545,18 @@ class CrosswordCreator():
             # Set the assignment variable value to this value
             assignment[var] = value
 
-            # Update the naive attempt count
-            self.naive_attempt_count += 1
+            # Determine which count to update
+            # If heuristic is false
+            if heuristic is False:
+
+                # Update the naive attempt count
+                self.naive_attempt_count += 1
+
+            # else heuristic is true
+            else:
+
+                # Update the heuristic attempt count
+                self.heuristic_attempt_count += 1
 
             # Step 4 - Check current assignment consistency
 
@@ -548,7 +567,7 @@ class CrosswordCreator():
                 # Perform backtracking for the next variable
 
                 # Set a result variable for capturing the result of the next run
-                result = self.perform_backtrack(assignment)
+                result = self.perform_backtrack(assignment, heuristic)
 
                 # Check if result is not None
                 if result is not None:
@@ -561,8 +580,18 @@ class CrosswordCreator():
             # Remove the current assignment variable value
             del assignment[var]
 
-            # Update the naive backtrack count
-            self.naive_backtrack_count += 1
+            # Determine which count to update
+            # If heuristic is false
+            if heuristic is False:
+
+                # Update the naive backtrack count
+                self.naive_backtrack_count += 1
+
+            # else heuristic is true
+            else:
+            
+                # Update the heuristic backtrack count
+                self.heuristic_backtrack_count += 1
 
         # Step 7 - No solution found
 
