@@ -1,6 +1,8 @@
 import sys
 
 from crossword import *
+import time
+import copy
 
 
 class CrosswordCreator():
@@ -301,9 +303,6 @@ class CrosswordCreator():
         return True
 
 
-
-
-
     def order_domain_values(self, var, assignment):
         """
         Return a list of values in the domain of `var`, in order by
@@ -332,7 +331,118 @@ class CrosswordCreator():
 
         If no assignment is possible, return None.
         """
-        raise NotImplementedError
+        # Create a copy of the original domains
+        original_domains = copy.deepcopy(self.domains)
+
+        # Initialise variables for the backtrack counts
+        self.naive_count = 0
+        self.heuristic_count = 0        
+
+        # Start a timer
+        start_time = time.perf_counter()
+
+        # Perform the naive backtrack search
+        naive_search = self.perform_backtrack(assignment)
+
+        # End the timer
+        end_time = time.perf_counter()
+
+        # Calculate the length of time it took in milliseconds
+        naive_total_time = (end_time - start_time) * 1000
+
+        # Ensure that the domains are set to the original version
+        self.domains = copy.deepcopy(original_domains)
+
+        # Start a timer
+        start_time = time.perf_counter()
+        
+        # Perform the naive backtrack search
+        heuristic_search = self.perform_backtrack(assignment)
+        
+        # End the timer
+        end_time = time.perf_counter()
+        
+        # Calculate the length of time it took in milliseconds
+        heuristic_total_time = (end_time - start_time) * 1000
+
+        return naive_search
+
+    def perform_backtrack(self, assignment):
+        """
+        Method to Perform the actual backtrack search
+        """        
+       
+        # Step 1 - Check if the assignment is complete
+
+        # If assignment_complete is true
+        if self.assignment_complete(assignment):
+
+            # If it is complete, return the assignment
+            return assignment
+
+        # Step 2 - Select an unassigned variable
+
+        # Set the next unassigned variable ready for use
+        var = self.next_unassigned_variable(assignment)
+
+        # Step 3 - Try each value in the domain for the selected variable
+
+        # For loop through the values for the selected variable in domains
+        for value in self.domains[var]:
+
+            # Set the assignment variable value to this value
+            assignment[var] = value
+
+            # Step 4 - Check current assignment consistency
+
+            # If assignment is consistent
+            if self.consistent(assignment):
+
+                # Step 5 - Recursive processing
+                # Perform backtracking for the next variable
+
+                # Set a result variable for capturing the result of the next run
+                result = self.perform_backtrack(assignment)
+
+                # Check if result is not None
+                if result is not None:
+
+                    # Return the result
+                    return result
+
+            # Step 6 - Remove assignment (backtrack)
+
+            # Remove the current assignment variable value
+            del assignment[var]
+
+            # Update the naive backtrack count
+            self.naive_count += 1
+
+        # Step 7 - No solution found
+
+        # There are no more viable variables not variable values
+        # Return None to indicate that no solution was found
+        return None
+
+
+
+        
+
+
+    def next_unassigned_variable(self, assignment):
+        """
+        Method to select an unassigned variable
+        This does not involve any ordering of the unassigned variables
+        """
+        
+        # For loop through the crossword variables
+        for var in self.crossword.variables:
+
+            # Check that it isn't in the assignment dictionary
+            if var not in assignment.keys():
+
+                # Return the variable
+                return var
 
 
 def main():
