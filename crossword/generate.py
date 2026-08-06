@@ -95,6 +95,14 @@ class CrosswordCreator():
         self.ac3()
         return self.backtrack(dict())
 
+
+    # ============================================================
+    # Function Name: enforce_node_consistency
+    # Purpose: Remove words from each variable’s domain that do not
+    #          match the variable’s required length.
+    # Notes: Unary constraint enforcement.
+    # ============================================================
+
     def enforce_node_consistency(self):
         """
         Update `self.domains` such that each variable is node-consistent.
@@ -119,6 +127,14 @@ class CrosswordCreator():
             # Set the var's value to be the new set
             self.domains[var] = possible_words
 
+
+    # ============================================================
+    # Function Name: revise
+    # Purpose: Enforce arc consistency between variables x and y by
+    #          removing values from x’s domain that have no matching
+    #          value in y’s domain at the overlap position.
+    # Notes: Returns True if domain of x was changed.
+    # ============================================================
 
     def revise(self, x, y):
         """
@@ -176,6 +192,11 @@ class CrosswordCreator():
         return revised
 
 
+    # ============================================================
+    # Function Name: ac3
+    # Purpose: Enforce arc consistency across all variable pairs.
+    # Notes: Implements the AC-3 algorithm using a queue of arcs.
+    # ============================================================
 
     def ac3(self, arcs=None):
         """
@@ -237,6 +258,13 @@ class CrosswordCreator():
         return True
 
 
+    # ============================================================
+    # Function Name: assignment_complete
+    # Purpose: Check whether all crossword variables have assigned
+    #          values in the assignment dictionary.
+    # Notes: Completeness check only; does not verify consistency.
+    # ============================================================
+
     def assignment_complete(self, assignment):
         """
         Return True if `assignment` is complete (i.e., assigns a value to each
@@ -255,7 +283,14 @@ class CrosswordCreator():
             # Return false to indicate that assignment is not complete
             return False
 
-        
+
+    # ============================================================
+    # Function Name: consistent
+    # Purpose: Verify that the current assignment is valid:
+    #          - All words are distinct
+    #          - All overlapping letters match
+    # Notes: Does not check completeness.
+    # ============================================================
 
     def consistent(self, assignment):
         """
@@ -322,6 +357,14 @@ class CrosswordCreator():
         """
         raise NotImplementedError
 
+
+    # ============================================================
+    # Function Name: backtrack
+    # Purpose: Run both naive and heuristic backtracking searches,
+    #          measure performance, and print results.
+    # Notes: Resets domains between runs; stores timing and counts.
+    # ============================================================
+
     def backtrack(self, assignment):
         """
         Using Backtracking Search, take as input a partial assignment for the
@@ -334,21 +377,23 @@ class CrosswordCreator():
         # Create a copy of the original domains
         original_domains = copy.deepcopy(self.domains)
 
-        # Initialise variables for the backtrack counts
-        self.naive_count = 0
-        self.heuristic_count = 0        
+        # Initialise variables for the backtrack and attempt counts
+        self.naive_backtrack_count = 0
+        self.naive_attempt_count = 0
+        self.heuristic_backtrack_count = 0        
+        self.heuristic_attempt_count = 0
 
         # Start a timer
         start_time = time.perf_counter()
 
         # Perform the naive backtrack search
-        naive_search = self.perform_backtrack(assignment)
+        self.naive_search = self.perform_backtrack(assignment)
 
         # End the timer
         end_time = time.perf_counter()
 
         # Calculate the length of time it took in milliseconds
-        naive_total_time = (end_time - start_time) * 1000
+        self.naive_total_time = (end_time - start_time) * 1000
 
         # Ensure that the domains are set to the original version
         self.domains = copy.deepcopy(original_domains)
@@ -357,15 +402,29 @@ class CrosswordCreator():
         start_time = time.perf_counter()
         
         # Perform the naive backtrack search
-        heuristic_search = self.perform_backtrack(assignment)
+        self.heuristic_search = self.perform_backtrack(dict())
         
         # End the timer
         end_time = time.perf_counter()
         
         # Calculate the length of time it took in milliseconds
-        heuristic_total_time = (end_time - start_time) * 1000
+        self.heuristic_total_time = (end_time - start_time) * 1000
 
-        return naive_search
+        # Print the search info
+        self.print_info()
+
+        return self.naive_search
+
+
+    # ============================================================
+    # Function Name: perform_backtrack
+    # Purpose: Recursive backtracking solver:
+    #          - Select next variable
+    #          - Try domain values
+    #          - Check consistency
+    #          - Recurse or backtrack
+    # Notes: Counts attempts and backtracks for benchmarking.
+    # ============================================================
 
     def perform_backtrack(self, assignment):
         """
@@ -393,6 +452,9 @@ class CrosswordCreator():
             # Set the assignment variable value to this value
             assignment[var] = value
 
+            # Update the naive attempt count
+            self.naive_attempt_count += 1
+
             # Step 4 - Check current assignment consistency
 
             # If assignment is consistent
@@ -416,7 +478,7 @@ class CrosswordCreator():
             del assignment[var]
 
             # Update the naive backtrack count
-            self.naive_count += 1
+            self.naive_backtrack_count += 1
 
         # Step 7 - No solution found
 
@@ -425,9 +487,12 @@ class CrosswordCreator():
         return None
 
 
-
-        
-
+    # ============================================================
+    # Function Name: next_unassigned_variable
+    # Purpose: Select the next unassigned variable using naive
+    #          ordering (first variable not yet assigned).
+    # Notes: Used for naive backtracking; heuristics will replace it.
+    # ============================================================
 
     def next_unassigned_variable(self, assignment):
         """
@@ -443,6 +508,72 @@ class CrosswordCreator():
 
                 # Return the variable
                 return var
+
+
+    # ============================================================
+    # Function Name: print_info
+    # Purpose: Display timing, attempt counts, backtrack counts,
+    #          and solutions for both naive and heuristic searches.
+    # Notes: Saves output images for both searches.
+    # ============================================================
+
+    def print_info(self):
+
+        # Print message saying which search is being done
+        print("Solving with Naive Backtracking search:\n")
+
+        # Check if the naive search failed
+        if self.naive_search is None:
+
+            # Print that there is no solution
+            print("No solution using naive backtracking search.\n\n")
+
+        # else the search succeeded
+        else:
+
+            # Print the search time
+            print(f"Naive Search Time: {self.naive_total_time:.4f} ms")
+
+            # Print the total backtrack count
+            print(f"Naive Total Backtrack Count: {self.naive_backtrack_count}")
+
+            # Print the total attempts count
+            print(f"Naive Total Attempts Count: {self.naive_attempt_count}")
+
+            # Print the solved crossword
+            print("Naive Search Solution:")
+            self.print(self.naive_search)
+
+            # Create the solution output file
+            self.save(self.naive_search, "naive_search")
+
+        # Print message saying which search is being done
+        print("\n\nSolving with Heuristic Backtracking search:\n")
+        
+        # Check if the heuristic search failed
+        if self.heuristic_search is None:
+        
+            # Print that there is no solution
+            print("No solution using heuristic backtracking search.\n\n")
+        
+        # else the search succeeded
+        else:
+        
+            # Print the search time
+            print(f"Heuristic Search Time: {self.heuristic_total_time:.4f} ms")
+        
+            # Print the total backtrack count
+            print(f"Heuristic Total Backtrack Count: {self.heuristic_backtrack_count}")
+
+            # Print the total attempts count
+            print(f"Heuristic Total Attempt Count: {self.heuristic_attempt_count}")
+        
+            # Print the solved crossword
+            print("Heuristic Search Solution:")
+            self.print(self.heuristic_search)
+
+            # Create the solution output file
+            self.save(self.heuristic_search, "heuristic_search")
 
 
 def main():
