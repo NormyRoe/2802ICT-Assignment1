@@ -347,6 +347,16 @@ class CrosswordCreator():
         """
         raise NotImplementedError
 
+
+    # ============================================================
+    # Function Name: select_unassigned_variable
+    # Purpose: Select the next unassigned variable using MRV 
+    #          (minimum remaining values).
+    #          If there is a tie break, select using DH
+    #          If there is still a tie break, pick one of the tied ones
+    # Notes: Used for heuristics backtracking
+    # ============================================================
+
     def select_unassigned_variable(self, assignment):
         """
         Return an unassigned variable not already part of `assignment`.
@@ -355,7 +365,81 @@ class CrosswordCreator():
         degree. If there is a tie, any of the tied variables are acceptable
         return values.
         """
-        raise NotImplementedError
+        # Create a temporary dictionary
+        unassigned_list = dict()
+
+        # Step 1 - Get the number of values
+
+        # For loop through the crossword variables
+        for var in self.crossword.variables:
+        
+            # Check that it isn't in the assignment dictionary
+            if var not in assignment.keys():
+        
+                # Add the variable to the temporary dictionary 
+                # with the number of values in the domain for that variable
+                unassigned_list[var] = len(self.domains[var])
+
+        # Get the minimum number from unassigned_list
+        min_number = min(unassigned_list.values())
+
+        # Step 2 - Perform MRV
+
+        # Create a MRV candidates list
+        candidates_mrv = []
+
+        # For loop through the unassigned_list dictionary
+        for var in unassigned_list.keys():
+
+            # Check if the value equals the min_number
+            if unassigned_list[var] == min_number:
+
+                # Add to the MRV candidates list
+                candidates_mrv.append(var)
+
+        # Check that there is only one entry
+        if len(candidates_mrv) == 1:
+
+            # return the variable
+            return candidates_mrv[0]
+
+        # Step 3 - Perform DH for tie breaker       
+
+        # Create a degree list
+        degree_list = dict()
+
+        # For loop through the candidates_mrv list to build a degree list
+        for var in candidates_mrv:
+        
+            # Add the variable with it's degree value
+            degree_list[var] = len(self.crossword.neighbors(var))
+
+        # Find and set the max degree value
+        max_degree = max(degree_list.values())
+
+        # Create a DH candidates list
+        candidates_dh = []
+
+        # For loop through the degree_list dictionary to find candidates
+        for var in degree_list.keys():
+
+            # Check if the degree is equal to the max degree
+            if degree_list[var] == max_degree:
+
+                # Add to DH candidates list
+                candidates_dh.append(var)
+        
+        # Check that there is only one entry
+        if len(candidates_dh) == 1:
+        
+            # return the variable
+            return candidates_dh[0]
+
+        # Step 3 - Perform additional tie breaker
+
+        # Arbitarily return the first entry in the DH candidate list
+        return candidates_dh[0]
+        
 
 
     # ============================================================
