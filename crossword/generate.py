@@ -708,11 +708,24 @@ class CrosswordCreator():
 
     def print_info(self):
 
+        # Print Crossword before solving
+        print("Crossword before solving:\n")
+        self.print_structure()
+
         # Print message saying which search is being done
-        print("Solving with Naive Backtracking search:\n")
+        print("\nSolving with Naive Backtracking search:\n")
 
         # Check if the naive search failed
         if self.naive_search is None:
+
+            # Print the search time
+            print(f"Naive Search Time: {self.naive_total_time:.4f} ms")
+            
+            # Print the total backtrack count
+            print(f"Naive Total Backtrack Count: {self.naive_backtrack_count}")
+            
+            # Print the total attempts count
+            print(f"Naive Total Attempts Count: {self.naive_attempt_count}")
 
             # Print that there is no solution
             print("No solution using naive backtracking search.\n\n")
@@ -741,9 +754,19 @@ class CrosswordCreator():
         
         # Check if the heuristic search failed
         if self.heuristic_search is None:
+
+            # Print the search time
+            print(f"Heuristic Search Time: {self.heuristic_total_time:.4f} ms")
+                    
+            # Print the total backtrack count
+            print(f"Heuristic Total Backtrack Count: {self.heuristic_backtrack_count}")
+            
+            # Print the total attempts count
+            print(f"Heuristic Total Attempt Count: {self.heuristic_attempt_count}")
         
             # Print that there is no solution
             print("No solution using heuristic backtracking search.\n\n")
+
         
         # else the search succeeded
         else:
@@ -766,6 +789,26 @@ class CrosswordCreator():
 
             # Print a couple of empty lines
             print("\n\n")
+
+    # ============================================================
+    # Function Name: print_structure
+    # Purpose: Prints the crossword as it is before solving.
+    # Notes: 
+    # ============================================================
+
+    def print_structure(self):
+        """
+        Print the crossword structure before solving.
+        Shows blocks and empty cells only.
+        """
+        for i in range(self.crossword.height):
+            for j in range(self.crossword.width):
+                if self.crossword.structure[i][j]:
+                    print("_", end="")   # empty cell
+                else:
+                    print("█", end="")  # block
+            print()
+
 
 
 def main():
