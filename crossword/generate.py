@@ -338,6 +338,14 @@ class CrosswordCreator():
         return True
 
 
+    # ============================================================
+    # Function Name: order_domain_values
+    # Purpose: Provide a sorted list of values for the provided variable
+    #          List is sorted in ascending order based on how many values 
+    #           would be removed from unassigned neighbors
+    # Notes: Used for heuristics backtracking
+    # ============================================================
+
     def order_domain_values(self, var, assignment):
         """
         Return a list of values in the domain of `var`, in order by
@@ -345,7 +353,69 @@ class CrosswordCreator():
         The first value in the list, for example, should be the one
         that rules out the fewest values among the neighbors of `var`.
         """
-        raise NotImplementedError
+        # Create a variable for the neighbours
+        neighbors = []
+
+        # For loop through the neighbors list
+        for n in self.crossword.neighbors(var):
+                
+            # Check that it isn't in the assignment dictionary
+            if n not in assignment.keys():
+                
+                # Add the neighbor if not in the assignment dictionary
+                neighbors.append(n)
+
+        # Create a lcv count dictionary
+        lcv_count = {}
+
+        # For loop through the variable's value
+        for x_value in self.domains[var]:
+
+            # Initialise a count variable
+            count = 0
+
+            # For loop through the neighbours list
+            for y_var in neighbors:
+
+                # Get the overlap
+                overlap = self.crossword.overlaps[(var, y_var)]
+
+                # Check if overlap is none
+                if overlap is None:
+
+                    # No overlap, continue to next variable
+                    continue
+
+                # Get the overlap index
+                x_index, y_index = overlap
+
+                # For loop through the values for y_var
+                for y_value in self.domains[y_var]:
+
+                    # Check if the letters at the overlap index don't match
+                    if x_value[x_index] != y_value[y_index]:
+
+                        # Increase the count by 1
+                        count += 1
+
+            # Store the value and count
+            lcv_count[x_value] = count
+
+        # Create a sorted dictionary with values in ascending order
+        lcv_sorted = dict(sorted(lcv_count.items(), key=lambda item: item[1]))
+
+        # Create a list for just the values
+        lcv_list = []
+
+        # For loop through the lcv_sorted dictionary
+        for lcv_var in lcv_sorted.keys():
+
+            # Add to the lcv list
+            lcv_list.append(lcv_var)                
+
+        # Return the sorted list of values
+        return lcv_list
+        
 
 
     # ============================================================
@@ -485,7 +555,7 @@ class CrosswordCreator():
         # Start a timer
         start_time = time.perf_counter()
         
-        # Perform the naive backtrack search
+        # Perform the heuristic backtrack search
         self.heuristic_search = self.perform_backtrack(dict(), heuristic=True)
         
         # End the timer
@@ -514,7 +584,7 @@ class CrosswordCreator():
         """
         Method to Perform the actual backtrack search
         """        
-       
+
         # Step 1 - Check if the assignment is complete
 
         # If assignment_complete is true
@@ -531,16 +601,22 @@ class CrosswordCreator():
             # Set the next unassigned variable ready for use
             var = self.next_unassigned_variable(assignment)
 
+            # Create a list of values to use
+            values = self.domains[var]
+
         # else heuristic is true
         else:
 
             # Set the next unassigned variable ready for use
             var = self.select_unassigned_variable(assignment)
 
+            # Create a list of values to use based on LCV
+            values = self.order_domain_values(var, assignment)
+
         # Step 3 - Try each value in the domain for the selected variable
 
-        # For loop through the values for the selected variable in domains
-        for value in self.domains[var]:
+        # For loop through the values list for the selected variable
+        for value in values:
 
             # Set the assignment variable value to this value
             assignment[var] = value
